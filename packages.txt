@@ -1,2 +1,0 @@
-# No system-level packages required
-# This file is included for Streamlit Cloud compatibility
