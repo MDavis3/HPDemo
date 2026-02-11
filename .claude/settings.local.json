@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Horizon Pocket Analyst sales enablement tool\n\n- Mobile-first Streamlit app with 4 tabs\n- Savings calculator with Plotly visualization\n- Objection handling scripts with accordion layout\n- Lead capture form with session state\n- Horizon branding \\(Navy, Emerald, White\\)\n- Ready for Streamlit Cloud deployment\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
