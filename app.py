@@ -1,6 +1,6 @@
 """
 ================================================================================
-HORIZON POCKET ANALYST - Sales Enablement Tool
+HORIZON POCKET ANALYST v2.0 - Sales Enablement Tool
 ================================================================================
 
 iOS "Add to Home Screen" Instructions:
@@ -19,9 +19,10 @@ Purpose: Demonstrating sales-focused technical solutions for Horizon Payments
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 from streamlit_option_menu import option_menu
 from datetime import datetime
-import base64
+import numpy as np
 
 # =============================================================================
 # PAGE CONFIGURATION & CUSTOM CSS
@@ -40,6 +41,8 @@ EMERALD_GREEN = "#2E86C1"
 LIGHT_GREEN = "#28B463"
 CLEAN_WHITE = "#FFFFFF"
 LIGHT_GRAY = "#F8F9FA"
+GOLD = "#D4AF37"
+ORANGE = "#E67E22"
 
 # Custom CSS for mobile-first, app-like experience
 st.markdown(f"""
@@ -49,6 +52,32 @@ st.markdown(f"""
     footer {{visibility: hidden;}}
     header {{visibility: hidden;}}
     .stDeployButton {{display: none;}}
+
+    /* Animations */
+    @keyframes fadeInUp {{
+        from {{
+            opacity: 0;
+            transform: translateY(20px);
+        }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+    }}
+
+    @keyframes pulse {{
+        0%, 100% {{ transform: scale(1); }}
+        50% {{ transform: scale(1.02); }}
+    }}
+
+    @keyframes shimmer {{
+        0% {{ background-position: -200% 0; }}
+        100% {{ background-position: 200% 0; }}
+    }}
+
+    .animate-fade-in {{
+        animation: fadeInUp 0.5s ease-out forwards;
+    }}
 
     /* Mobile-first responsive design */
     .main .block-container {{
@@ -68,6 +97,7 @@ st.markdown(f"""
         text-align: center;
         margin-bottom: 1rem;
         box-shadow: 0 4px 15px rgba(0,51,102,0.3);
+        animation: fadeInUp 0.4s ease-out;
     }}
 
     .horizon-header h1 {{
@@ -83,6 +113,21 @@ st.markdown(f"""
         opacity: 0.9;
     }}
 
+    /* Award badge */
+    .award-badge {{
+        background: linear-gradient(135deg, {GOLD} 0%, #B8860B 100%);
+        color: #1a1a1a;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        margin: 0.5rem 0;
+        box-shadow: 0 2px 10px rgba(212,175,55,0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }}
+
     /* Big savings display */
     .savings-display {{
         background: linear-gradient(135deg, {EMERALD_GREEN} 0%, {LIGHT_GREEN} 100%);
@@ -92,6 +137,7 @@ st.markdown(f"""
         text-align: center;
         margin: 1.5rem 0;
         box-shadow: 0 6px 20px rgba(46,134,193,0.4);
+        animation: fadeInUp 0.5s ease-out;
     }}
 
     .savings-display .label {{
@@ -114,15 +160,46 @@ st.markdown(f"""
         opacity: 0.9;
     }}
 
+    /* Earnings display - special gold accent */
+    .earnings-display {{
+        background: linear-gradient(135deg, {GOLD} 0%, #B8860B 100%);
+        color: #1a1a1a;
+        padding: 2rem;
+        border-radius: 16px;
+        text-align: center;
+        margin: 1.5rem 0;
+        box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+        animation: fadeInUp 0.5s ease-out;
+    }}
+
+    .earnings-display .label {{
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }}
+
+    .earnings-display .amount {{
+        font-size: 2.8rem;
+        font-weight: 800;
+        margin: 0.5rem 0;
+    }}
+
+    .earnings-display .subtext {{
+        font-size: 0.85rem;
+        opacity: 0.85;
+    }}
+
     /* Commission easter egg */
     .commission-box {{
-        background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+        background: linear-gradient(135deg, {ORANGE} 0%, #D35400 100%);
         color: {CLEAN_WHITE};
         padding: 1.2rem;
         border-radius: 12px;
         text-align: center;
         margin: 1rem 0;
-        box-shadow: 0 4px 15px rgba(243,156,18,0.4);
+        box-shadow: 0 4px 15px rgba(230,126,34,0.4);
+        animation: fadeInUp 0.4s ease-out;
     }}
 
     /* Metric cards */
@@ -134,6 +211,7 @@ st.markdown(f"""
         text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         margin: 0.5rem 0;
+        animation: fadeInUp 0.4s ease-out;
     }}
 
     .metric-card .metric-label {{
@@ -148,6 +226,27 @@ st.markdown(f"""
         font-weight: 700;
         color: {NAVY_BLUE};
         margin: 0.3rem 0;
+    }}
+
+    /* Insight card */
+    .insight-card {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: {CLEAN_WHITE};
+        padding: 1.2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+    }}
+
+    /* Active listening card */
+    .listening-card {{
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: {CLEAN_WHITE};
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(17,153,142,0.3);
     }}
 
     /* Touch-friendly buttons */
@@ -174,9 +273,20 @@ st.markdown(f"""
         transform: translateY(0);
     }}
 
-    /* Success button variant */
-    .success-btn > button {{
-        background: linear-gradient(135deg, {LIGHT_GREEN} 0%, #1E8449 100%) !important;
+    /* Progress bar styling */
+    .bonus-progress {{
+        background: #E0E0E0;
+        border-radius: 10px;
+        height: 12px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }}
+
+    .bonus-progress-fill {{
+        background: linear-gradient(90deg, {LIGHT_GREEN} 0%, {EMERALD_GREEN} 100%);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
     }}
 
     /* Accordion styling */
@@ -207,12 +317,6 @@ st.markdown(f"""
         box-shadow: 0 0 0 2px rgba(46,134,193,0.2);
     }}
 
-    /* Navigation menu */
-    .nav-link {{
-        font-size: 0.85rem !important;
-        padding: 0.6rem 0.8rem !important;
-    }}
-
     /* Section headers */
     .section-header {{
         color: {NAVY_BLUE};
@@ -231,6 +335,66 @@ st.markdown(f"""
         border-radius: 0 12px 12px 0;
         margin: 1rem 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        animation: fadeInUp 0.4s ease-out;
+    }}
+
+    .about-card-gold {{
+        background: {CLEAN_WHITE};
+        border-left: 4px solid {GOLD};
+        padding: 1.2rem;
+        border-radius: 0 12px 12px 0;
+        margin: 1rem 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        animation: fadeInUp 0.4s ease-out;
+    }}
+
+    /* Horizon spotlight */
+    .horizon-spotlight {{
+        background: linear-gradient(135deg, {NAVY_BLUE} 0%, #004080 100%);
+        color: {CLEAN_WHITE};
+        padding: 1.5rem;
+        border-radius: 16px;
+        text-align: center;
+        margin: 1rem 0;
+        box-shadow: 0 6px 20px rgba(0,51,102,0.3);
+    }}
+
+    /* Skills alignment table */
+    .skills-table {{
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 1rem 0;
+    }}
+
+    .skills-table th {{
+        background: {NAVY_BLUE};
+        color: {CLEAN_WHITE};
+        padding: 0.8rem;
+        text-align: left;
+        font-size: 0.85rem;
+    }}
+
+    .skills-table th:first-child {{
+        border-radius: 10px 0 0 0;
+    }}
+
+    .skills-table th:last-child {{
+        border-radius: 0 10px 0 0;
+    }}
+
+    .skills-table td {{
+        padding: 0.8rem;
+        border-bottom: 1px solid #E0E0E0;
+        font-size: 0.85rem;
+    }}
+
+    .skills-table tr:last-child td:first-child {{
+        border-radius: 0 0 0 10px;
+    }}
+
+    .skills-table tr:last-child td:last-child {{
+        border-radius: 0 0 10px 0;
     }}
 
     /* Objection badge */
@@ -255,19 +419,36 @@ st.markdown(f"""
         line-height: 1.6;
     }}
 
-    /* Toggle switch label */
-    .toggle-label {{
-        color: {NAVY_BLUE};
-        font-weight: 600;
-        font-size: 0.9rem;
-    }}
-
     /* Divider */
     hr {{
         border: none;
         height: 1px;
         background: linear-gradient(to right, transparent, {EMERALD_GREEN}, transparent);
         margin: 1.5rem 0;
+    }}
+
+    /* Quote badge */
+    .quote-badge {{
+        background: {LIGHT_GREEN};
+        color: {CLEAN_WHITE};
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }}
+
+    /* Value statement box */
+    .value-statement {{
+        background: linear-gradient(135deg, {EMERALD_GREEN} 0%, {LIGHT_GREEN} 100%);
+        color: {CLEAN_WHITE};
+        padding: 1.5rem;
+        border-radius: 16px;
+        text-align: center;
+        margin: 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        box-shadow: 0 6px 20px rgba(46,134,193,0.3);
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -278,12 +459,13 @@ st.markdown(f"""
 
 if 'leads' not in st.session_state:
     st.session_state.leads = pd.DataFrame(columns=[
-        'timestamp', 'business_name', 'owner_name', 'monthly_volume',
-        'current_rate', 'estimated_savings', 'statement_uploaded'
+        'timestamp', 'business_name', 'owner_name', 'phone', 'email',
+        'monthly_volume', 'current_rate', 'estimated_savings',
+        'lead_source', 'quote_requested', 'statement_uploaded'
     ])
 
-if 'show_commission' not in st.session_state:
-    st.session_state.show_commission = False
+if 'quote_count' not in st.session_state:
+    st.session_state.quote_count = 0
 
 # =============================================================================
 # HEADER
@@ -297,13 +479,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# NAVIGATION
+# NAVIGATION - 5 TABS
 # =============================================================================
 
 selected = option_menu(
     menu_title=None,
-    options=["Calculator", "Objections", "Capture", "About"],
-    icons=["calculator-fill", "shield-check", "person-plus-fill", "info-circle-fill"],
+    options=["Calculator", "Earnings", "Objections", "Capture", "About"],
+    icons=["calculator-fill", "graph-up-arrow", "shield-check", "person-plus-fill", "award-fill"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal",
@@ -314,12 +496,12 @@ selected = option_menu(
             "border-radius": "12px",
             "margin-bottom": "1rem"
         },
-        "icon": {"color": EMERALD_GREEN, "font-size": "1rem"},
+        "icon": {"color": EMERALD_GREEN, "font-size": "0.9rem"},
         "nav-link": {
-            "font-size": "0.8rem",
+            "font-size": "0.7rem",
             "text-align": "center",
             "margin": "0px",
-            "padding": "0.7rem 0.5rem",
+            "padding": "0.6rem 0.3rem",
             "--hover-color": "#E8F4FD",
             "border-radius": "10px",
             "font-weight": "600"
@@ -333,7 +515,7 @@ selected = option_menu(
 )
 
 # =============================================================================
-# TAB 1: THE HOOK (SAVINGS CALCULATOR)
+# TAB 1: CALCULATOR (ENHANCED)
 # =============================================================================
 
 if selected == "Calculator":
@@ -341,7 +523,7 @@ if selected == "Calculator":
 
     st.markdown("""
     <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-    Show merchants exactly how much they could save by switching to Horizon Payments.
+    <em>"Transparent pricing. Real savings."</em> — Show merchants exactly what they could save.
     </p>
     """, unsafe_allow_html=True)
 
@@ -366,20 +548,36 @@ if selected == "Calculator":
         help="Their current effective rate (total fees ÷ volume)"
     )
 
+    # SAVINGS MODE SELECTOR
+    st.markdown("**Savings Estimate Mode**")
+    savings_mode = st.radio(
+        "Select savings estimate",
+        options=["Conservative (30%)", "Typical (40%)", "Optimized (50%)"],
+        horizontal=True,
+        index=1,
+        help="Based on Horizon's track record of 30-50% savings",
+        label_visibility="collapsed"
+    )
+
+    # Parse savings percentage
+    if "30%" in savings_mode:
+        savings_percentage = 0.30
+    elif "40%" in savings_mode:
+        savings_percentage = 0.40
+    else:
+        savings_percentage = 0.50
+
     st.markdown("<hr>", unsafe_allow_html=True)
 
     # CALCULATIONS
     current_monthly_fees = monthly_volume * (current_rate / 100)
     current_annual_fees = current_monthly_fees * 12
 
-    # Conservative 30% reduction
-    savings_percentage = 0.30
     monthly_savings = current_monthly_fees * savings_percentage
     annual_savings = monthly_savings * 12
 
     horizon_monthly_fees = current_monthly_fees - monthly_savings
     horizon_annual_fees = horizon_monthly_fees * 12
-    horizon_rate = current_rate * (1 - savings_percentage)
 
     # Metric Cards Row
     col1, col2 = st.columns(2)
@@ -457,7 +655,13 @@ if selected == "Calculator":
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # EASTER EGG - Rep View Toggle
+    # NSM QUOTE BUTTON
+    if st.button("📋 Request NSM Quote", use_container_width=True):
+        st.session_state.quote_count += 1
+        st.toast("Quote request sent to National Sales Manager!", icon="✅")
+        st.success("**Quote Requested!** Your NSM will prepare a detailed proposal.")
+
+    # REP VIEW TOGGLE
     st.markdown("<hr>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -466,39 +670,213 @@ if selected == "Calculator":
 
     if rep_view:
         # Commission calculation: 25% of the savings
-        estimated_commission = annual_savings * 0.25
-        monthly_commission = estimated_commission / 12
+        upfront_commission = annual_savings * 0.25
+        monthly_residual = horizon_monthly_fees * 0.25
 
         st.markdown(f"""
         <div class="commission-box">
-            <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">
-                💼 Your Estimated Commission
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">
+                💼 Upfront Commission (25%)
             </div>
-            <div style="font-size: 2rem; font-weight: 800; margin: 0.3rem 0;">
-                ${estimated_commission:,.0f}/year
+            <div style="font-size: 1.8rem; font-weight: 800; margin: 0.2rem 0;">
+                ${upfront_commission:,.0f}
             </div>
-            <div style="font-size: 0.85rem; opacity: 0.9;">
-                (~${monthly_commission:,.0f}/month residual)
-            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="metric-card" style="border: 2px solid {GOLD};">
+            <div class="metric-label">Monthly Residual (25%)</div>
+            <div class="metric-value" style="color: {GOLD};">${monthly_residual:,.0f}/mo</div>
+            <div style="font-size: 0.75rem; color: #888;">Recurring passive income!</div>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("""
         <p style="text-align: center; font-size: 0.75rem; color: #888; margin-top: 0.5rem;">
-        *Based on 25% of merchant savings. Actual commission may vary.
+        💡 See the <strong>Earnings</strong> tab for long-term income projections
         </p>
         """, unsafe_allow_html=True)
 
 # =============================================================================
-# TAB 2: THE SHIELD (OBJECTION HANDLING)
+# TAB 2: EARNINGS (NEW - RESIDUAL INCOME PROJECTOR)
+# =============================================================================
+
+elif selected == "Earnings":
+    st.markdown('<p class="section-header">📈 Residual Income Projector</p>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+    See the power of recurring revenue. Close deals today, earn income for years.
+    </p>
+    """, unsafe_allow_html=True)
+
+    # Note about draw
+    st.markdown(f"""
+    <div class="insight-card">
+        <strong>💡 Getting Started?</strong><br>
+        <span style="font-size: 0.85rem;">$375/week draw available while you build your book of business</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # INPUTS
+    deals_per_month = st.slider(
+        "Deals Closed Per Month",
+        min_value=1,
+        max_value=15,
+        value=5,
+        help="Average number of new merchant accounts per month"
+    )
+
+    avg_volume = st.slider(
+        "Average Merchant Monthly Volume ($)",
+        min_value=10000,
+        max_value=150000,
+        value=50000,
+        step=5000,
+        help="Typical monthly processing volume per merchant"
+    )
+
+    # Assumptions
+    avg_rate = 2.5  # Average rate charged
+    avg_savings_pct = 0.35  # 35% average savings
+    residual_pct = 0.25  # 25% residual
+
+    # Calculate per-deal residual
+    monthly_fees_per_merchant = avg_volume * (avg_rate / 100) * (1 - avg_savings_pct)
+    residual_per_merchant = monthly_fees_per_merchant * residual_pct
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    # Projections
+    months = np.arange(1, 37)  # 3 years
+    cumulative_accounts = months * deals_per_month
+    monthly_residual_income = cumulative_accounts * residual_per_merchant
+
+    # Key milestones
+    month_6_income = 6 * deals_per_month * residual_per_merchant
+    month_12_income = 12 * deals_per_month * residual_per_merchant
+    month_24_income = 24 * deals_per_month * residual_per_merchant
+    month_36_income = 36 * deals_per_month * residual_per_merchant
+
+    # BIG EARNINGS DISPLAY
+    st.markdown(f"""
+    <div class="earnings-display">
+        <div class="label">Projected Monthly Income (Year 2)</div>
+        <div class="amount">${month_24_income:,.0f}/mo</div>
+        <div class="subtext">With {deals_per_month * 24} active accounts</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Milestone cards
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Month 6</div>
+            <div class="metric-value" style="color: {EMERALD_GREEN};">${month_6_income:,.0f}/mo</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Year 1</div>
+            <div class="metric-value" style="color: {LIGHT_GREEN};">${month_12_income:,.0f}/mo</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Year 2</div>
+            <div class="metric-value" style="color: {GOLD};">${month_24_income:,.0f}/mo</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Year 3</div>
+            <div class="metric-value" style="color: {ORANGE};">${month_36_income:,.0f}/mo</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # GROWTH CHART
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=months,
+        y=monthly_residual_income,
+        mode='lines',
+        fill='tozeroy',
+        line=dict(color=EMERALD_GREEN, width=3),
+        fillcolor='rgba(46,134,193,0.3)',
+        name='Monthly Residual'
+    ))
+
+    fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(family="Arial", size=12),
+        margin=dict(l=20, r=20, t=40, b=40),
+        height=280,
+        xaxis=dict(
+            title="Months",
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.1)',
+            tickvals=[6, 12, 18, 24, 30, 36],
+            ticktext=['6mo', '1yr', '18mo', '2yr', '30mo', '3yr']
+        ),
+        yaxis=dict(
+            title="Monthly Income",
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.1)',
+            tickformat='$,.0f'
+        ),
+        showlegend=False
+    )
+
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Key insight
+    st.markdown(f"""
+    <div class="insight-card">
+        <strong>🎯 The Insight</strong><br>
+        <span style="font-size: 0.9rem;">
+        Close just {deals_per_month} deals/month and you'll earn <strong>${month_24_income:,.0f}/month in passive income</strong> by Year 2.
+        That's on top of your upfront commissions!
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <p style="text-align: center; font-size: 0.75rem; color: #888; margin-top: 1rem;">
+    *Projections based on average merchant volume and 25% residual rate. Actual results may vary.
+    </p>
+    """, unsafe_allow_html=True)
+
+# =============================================================================
+# TAB 3: OBJECTIONS (POLISHED)
 # =============================================================================
 
 elif selected == "Objections":
     st.markdown('<p class="section-header">🛡️ Objection Handler</p>', unsafe_allow_html=True)
 
+    # ACTIVE LISTENING CARD
+    st.markdown(f"""
+    <div class="listening-card">
+        <strong>👂 Active Listening First</strong>
+        <div style="font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.5;">
+        ✓ Pause before responding<br>
+        ✓ Repeat back what you heard<br>
+        ✓ Ask clarifying questions
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("""
     <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-    Turn "no" into "let's talk more." Tap any objection for an empathy-first response script.
+    Turn "no" into "let's talk more." Tap any objection for an empathy-first response.
     </p>
     """, unsafe_allow_html=True)
 
@@ -546,7 +924,7 @@ elif selected == "Objections":
         <br><br>
         The industry changes constantly, and most processors count on business owners being 'happy enough' not to look around. I'm not here to bash anyone—<strong>I'm here to make sure you're getting what you deserve.</strong>
         <br><br>
-        A quick comparison costs nothing and takes 5 minutes. If your current deal is truly the best, I'll be the first to shake your hand and say 'stay put.'"
+        Horizon is built on transparency. A quick comparison costs nothing and takes 5 minutes. If your current deal is truly the best, I'll be the first to shake your hand and say 'stay put.'"
         </div>
         """, unsafe_allow_html=True)
 
@@ -580,9 +958,9 @@ elif selected == "Objections":
         <br><br>
         Can I ask what happened? <em>[Listen with genuine empathy]</em>
         <br><br>
-        Here's how Horizon is different: <strong>We don't do hidden fees. We don't do bait-and-switch.</strong> Everything I show you today is what you get. Period.
+        Here's how Horizon is different: <strong>We're built on transparency—no hidden fees, no bait-and-switch.</strong> Everything I show you today is what you get. Period.
         <br><br>
-        I know trust is earned, not given. So let's start small—<strong>let me do a free analysis with zero obligation.</strong> If anything feels off at any point, you tell me to walk, and I will. Fair?"
+        We've been recognized 4 years in a row as one of Portland's Top 100 Fastest-Growing companies—that doesn't happen by burning customers. Let's start small—<strong>a free analysis with zero obligation.</strong> If anything feels off, you tell me to walk, and I will. Fair?"
         </div>
         """, unsafe_allow_html=True)
 
@@ -598,22 +976,58 @@ elif selected == "Objections":
         <br><br>
         Your effective rate depends on your card mix, ticket size, and how transactions are processed. That's why I need to see the actual data.
         <br><br>
-        What I <em>can</em> promise is this: <strong>We typically save businesses 20-30% on their total processing costs.</strong> Let me prove it with your real numbers instead of throwing out a rate that doesn't mean anything."
+        What I <em>can</em> promise is this: <strong>Horizon typically saves businesses 30-50% on their total processing costs.</strong> Let me prove it with your real numbers instead of throwing out a rate that doesn't mean anything."
         </div>
         """, unsafe_allow_html=True)
 
         st.info("💡 **Pro Tip:** Redirect from 'rate' to 'total cost.' This is where you demonstrate expertise.")
 
+    # Objection 7: Need to Talk to Partner (NEW)
+    with st.expander("👥 \"I need to talk to my partner/spouse...\""):
+        st.markdown("""
+        <span class="objection-badge">DECISION-MAKER OBJECTION</span>
+
+        <div class="script-text">
+        "That makes total sense—important business decisions should include all the stakeholders.
+        <br><br>
+        Here's what I can do: let me put together <strong>a clear, one-page comparison</strong> that you can show them tonight. Numbers speak louder than words, right?
+        <br><br>
+        Quick question—<strong>if the savings look as good as I think they will, what would your partner need to see to feel confident?</strong>
+        <br><br>
+        <em>[Listen, then tailor your follow-up accordingly]</em>
+        <br><br>
+        I'll send you the comparison, and let's set up a quick 10-minute call for tomorrow. That way I can answer any questions you both might have. Sound good?"
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.info("💡 **Pro Tip:** Provide ammunition for their conversation. Make it easy for them to sell it internally.")
+
 # =============================================================================
-# TAB 3: THE CLOSE (LEAD CAPTURE)
+# TAB 4: LEAD CAPTURE (ENHANCED)
 # =============================================================================
 
 elif selected == "Capture":
     st.markdown('<p class="section-header">📋 Lead Capture</p>', unsafe_allow_html=True)
 
+    # FIRST 30 DAYS BONUS TRACKER
+    if st.session_state.quote_count > 0:
+        bonus_earned = st.session_state.quote_count * 100
+        progress_pct = min(st.session_state.quote_count / 20 * 100, 100)  # Cap at 20 quotes
+
+        st.markdown(f"""
+        <div class="metric-card" style="border: 2px solid {GOLD};">
+            <div class="metric-label">🎯 First 30 Days Bonus</div>
+            <div class="metric-value" style="color: {GOLD};">${bonus_earned}</div>
+            <div style="font-size: 0.8rem; color: #666;">{st.session_state.quote_count} quotes × $100 each</div>
+            <div class="bonus-progress" style="margin-top: 0.5rem;">
+                <div class="bonus-progress-fill" style="width: {progress_pct}%;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     st.markdown("""
     <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-    Capture the deal details before you leave. Every lead logged is a step closer to closing.
+    Capture deal details before you leave. Every lead logged is a step closer to closing.
     </p>
     """, unsafe_allow_html=True)
 
@@ -629,7 +1043,20 @@ elif selected == "Capture":
             placeholder="e.g., Joe Martinez"
         )
 
-        # Volume & Rate (pre-populated if they used calculator)
+        # Contact Info
+        col1, col2 = st.columns(2)
+        with col1:
+            phone = st.text_input(
+                "Phone",
+                placeholder="(555) 123-4567"
+            )
+        with col2:
+            email = st.text_input(
+                "Email",
+                placeholder="joe@pizzapalace.com"
+            )
+
+        # Volume & Rate
         col1, col2 = st.columns(2)
         with col1:
             lead_volume = st.number_input(
@@ -647,6 +1074,15 @@ elif selected == "Capture":
                 value=3.0,
                 step=0.1
             )
+
+        # Lead Source
+        lead_source = st.selectbox(
+            "Lead Source",
+            options=["Scheduled Appointment", "Walk-in/Door Knock", "Referral", "Follow-up", "Other"]
+        )
+
+        # Quote Requested Toggle
+        quote_requested = st.checkbox("📋 Quote Requested", help="Check if merchant wants a formal quote")
 
         # Statement Photo Upload
         st.markdown("**📸 Statement Photo**")
@@ -667,7 +1103,7 @@ elif selected == "Capture":
 
         # Submit Button
         submitted = st.form_submit_button(
-            "📤 Submit Lead",
+            "📤 Submit to NSM",
             use_container_width=True
         )
 
@@ -676,16 +1112,24 @@ elif selected == "Capture":
                 st.error("Please fill in Business Name and Owner Name.")
             else:
                 # Calculate estimated savings for the lead
-                estimated_savings = (lead_volume * (lead_rate/100) * 0.30) * 12
+                estimated_savings = (lead_volume * (lead_rate/100) * 0.35) * 12
+
+                # Update quote count if quote requested
+                if quote_requested:
+                    st.session_state.quote_count += 1
 
                 # Create new lead entry
                 new_lead = pd.DataFrame([{
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
                     'business_name': business_name,
                     'owner_name': owner_name,
+                    'phone': phone,
+                    'email': email,
                     'monthly_volume': lead_volume,
                     'current_rate': lead_rate,
                     'estimated_savings': estimated_savings,
+                    'lead_source': lead_source,
+                    'quote_requested': 'Yes' if quote_requested else 'No',
                     'statement_uploaded': 'Yes' if uploaded_file else 'No'
                 }])
 
@@ -696,30 +1140,40 @@ elif selected == "Capture":
                 )
 
                 # Success notification
-                st.toast("✅ Lead captured successfully!", icon="🎉")
-                st.success("**Success!** Lead sent to National Sales Manager.")
+                st.toast("Lead captured successfully!", icon="✅")
+                st.success("**Success!** Lead sent to your National Sales Manager for quote preparation.")
                 st.balloons()
 
     # Show captured leads summary
     if len(st.session_state.leads) > 0:
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown('<p class="section-header">📊 Today\'s Captured Leads</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">📊 Today\'s Pipeline</p>', unsafe_allow_html=True)
 
         total_pipeline = st.session_state.leads['estimated_savings'].sum()
+        quotes_count = len(st.session_state.leads[st.session_state.leads['quote_requested'] == 'Yes'])
 
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Total Pipeline Value</div>
-            <div class="metric-value" style="color: {LIGHT_GREEN};">${total_pipeline:,.0f}</div>
-            <div style="font-size: 0.8rem; color: #666;">{len(st.session_state.leads)} leads captured</div>
-        </div>
-        """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Pipeline Value</div>
+                <div class="metric-value" style="color: {LIGHT_GREEN};">${total_pipeline:,.0f}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Leads / Quotes</div>
+                <div class="metric-value" style="color: {NAVY_BLUE};">{len(st.session_state.leads)} / {quotes_count}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        # Display leads as cards (mobile-friendly)
+        # Display leads as cards
         for idx, lead in st.session_state.leads.iterrows():
+            quote_badge = f'<span class="quote-badge">QUOTE</span>' if lead['quote_requested'] == 'Yes' else ''
             st.markdown(f"""
             <div class="about-card">
-                <strong style="color: {NAVY_BLUE};">{lead['business_name']}</strong><br>
+                <strong style="color: {NAVY_BLUE};">{lead['business_name']}</strong> {quote_badge}<br>
                 <span style="color: #666; font-size: 0.85rem;">
                 👤 {lead['owner_name']} | 💰 ${lead['monthly_volume']:,}/mo |
                 📈 ${lead['estimated_savings']:,.0f} potential savings
@@ -728,74 +1182,124 @@ elif selected == "Capture":
             """, unsafe_allow_html=True)
 
 # =============================================================================
-# TAB 4: ABOUT (THE "WHY HIRE ME" PAGE)
+# TAB 5: ABOUT (COMPLETE OVERHAUL)
 # =============================================================================
 
 elif selected == "About":
-    st.markdown('<p class="section-header">👋 About This Tool</p>', unsafe_allow_html=True)
-
+    # HORIZON SPOTLIGHT
     st.markdown(f"""
-    <div class="about-card">
-        <h4 style="color: {NAVY_BLUE}; margin-top: 0;">Built for Horizon Payments</h4>
-        <p style="color: #555; line-height: 1.6; margin-bottom: 0;">
-        This <strong>Horizon Pocket Analyst</strong> was designed and developed by
-        <strong>Manav Davis</strong> specifically for the Business Solutions Consultant role
-        at Horizon Payments.
+    <div class="horizon-spotlight">
+        <div class="award-badge">🏆 4× Portland Business Journal Top 100</div>
+        <h3 style="margin: 1rem 0 0.5rem 0; font-size: 1.3rem;">Horizon Payments</h3>
+        <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">
+        "Advocating for business owners across the nation"
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div class="about-card">
-        <h4 style="color: {NAVY_BLUE}; margin-top: 0;">💡 Why I Built This</h4>
-        <p style="color: #555; line-height: 1.6;">
-        I believe in <strong>showing, not telling.</strong> Instead of just talking about
-        my skills in an interview, I wanted to demonstrate exactly how I approach problems:
-        </p>
-        <ul style="color: #555; line-height: 1.8;">
-            <li><strong>Identify the need:</strong> Field reps need mobile-friendly tools</li>
-            <li><strong>Design the solution:</strong> Clean, fast, touch-optimized interface</li>
-            <li><strong>Deliver value:</strong> Real calculations, real objection handlers, real lead capture</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="about-card">
-        <h4 style="color: {NAVY_BLUE}; margin-top: 0;">🛠️ Technical Skills Demonstrated</h4>
-        <ul style="color: #555; line-height: 1.8; margin-bottom: 0;">
-            <li><strong>Python & Streamlit:</strong> Full-stack web application development</li>
-            <li><strong>Data Visualization:</strong> Interactive Plotly charts</li>
-            <li><strong>UX/UI Design:</strong> Mobile-first, brand-aligned interface</li>
-            <li><strong>Sales Acumen:</strong> Objection handling scripts & value propositions</li>
-            <li><strong>Cloud Deployment:</strong> Production-ready for Streamlit Cloud</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="about-card">
-        <h4 style="color: {NAVY_BLUE}; margin-top: 0;">🎯 My Approach to Sales</h4>
-        <p style="color: #555; line-height: 1.6; margin-bottom: 0;">
-        I believe modern sales is about <strong>education over persuasion</strong> and
-        <strong>value over volume.</strong> This tool embodies that philosophy—it helps
-        merchants see their own savings, not just hear a pitch.
-        <br><br>
-        <em>"The best salespeople don't convince. They clarify."</em>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Core Values
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div style="text-align: center; padding: 0.5rem;">
+            <div style="font-size: 1.5rem;">🤝</div>
+            <div style="font-size: 0.75rem; color: {NAVY_BLUE}; font-weight: 600;">Transparency</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div style="text-align: center; padding: 0.5rem;">
+            <div style="font-size: 1.5rem;">🎯</div>
+            <div style="font-size: 0.75rem; color: {NAVY_BLUE}; font-weight: 600;">Partnership</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div style="text-align: center; padding: 0.5rem;">
+            <div style="font-size: 1.5rem;">📈</div>
+            <div style="font-size: 0.75rem; color: {NAVY_BLUE}; font-weight: 600;">Growth</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # Contact / CTA
+    # WHY I BUILT THIS
+    st.markdown('<p class="section-header">💡 Why I Built This</p>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="about-card">
+        <p style="color: #555; line-height: 1.6; margin: 0;">
+        I believe in <strong>showing, not telling.</strong>
+        <br><br>
+        Instead of just talking about my skills in an interview, I built a production-ready tool that solves a real problem: <strong>field reps need mobile-first technology</strong> to close deals faster.
+        <br><br>
+        This app demonstrates how I approach challenges—understand the need, design the solution, deliver value.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # SKILLS → ROLE ALIGNMENT
+    st.markdown('<p class="section-header">🎯 Skills → Role Alignment</p>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <table class="skills-table">
+        <tr>
+            <th>You're Looking For</th>
+            <th>This Tool Proves It</th>
+        </tr>
+        <tr>
+            <td><strong>Communication</strong></td>
+            <td>Clear, intuitive UX design</td>
+        </tr>
+        <tr>
+            <td><strong>Active Listening</strong></td>
+            <td>Empathy-first objection scripts</td>
+        </tr>
+        <tr>
+            <td><strong>Confidence</strong></td>
+            <td>Built this before the interview</td>
+        </tr>
+        <tr>
+            <td><strong>Independence</strong></td>
+            <td>Self-directed, production-ready</td>
+        </tr>
+        <tr>
+            <td><strong>Adaptability</strong></td>
+            <td>Mobile-first for field flexibility</td>
+        </tr>
+    </table>
+    """, unsafe_allow_html=True)
+
+    # VALUE STATEMENT
+    st.markdown(f"""
+    <div class="value-statement">
+        "I don't just apply for jobs—I solve problems."
+    </div>
+    """, unsafe_allow_html=True)
+
+    # TECHNICAL SKILLS
+    st.markdown(f"""
+    <div class="about-card-gold">
+        <h4 style="color: {NAVY_BLUE}; margin-top: 0;">🛠️ Technical Edge</h4>
+        <p style="color: #555; line-height: 1.6; margin: 0;">
+        • <strong>Python & Streamlit:</strong> Full-stack app development<br>
+        • <strong>Data Visualization:</strong> Interactive Plotly charts<br>
+        • <strong>UX/UI Design:</strong> Mobile-first, brand-aligned interface<br>
+        • <strong>Cloud Deployment:</strong> Production-ready on Streamlit Cloud
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # CLOSING STATEMENT
+    st.markdown("<hr>", unsafe_allow_html=True)
+
     st.markdown(f"""
     <div style="text-align: center; padding: 1rem;">
-        <p style="color: {NAVY_BLUE}; font-weight: 600; font-size: 1.1rem;">
-        Ready to discuss how I can bring this energy to Horizon?
+        <p style="color: {NAVY_BLUE}; font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">
+        Ready to advocate for business owners—together.
         </p>
-        <p style="color: #666; font-size: 0.9rem;">
-        Let's connect and make great things happen.
+        <p style="color: #888; font-size: 0.85rem; margin: 0;">
+        Built by <strong>Manav Davis</strong> for Horizon Payments
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -807,6 +1311,6 @@ elif selected == "About":
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown(f"""
 <div style="text-align: center; padding: 0.5rem; color: #999; font-size: 0.75rem;">
-    Horizon Pocket Analyst v1.0 | Built with 💙 for Horizon Payments
+    Horizon Pocket Analyst v2.0 | Built with 💙 for Horizon Payments
 </div>
 """, unsafe_allow_html=True)
