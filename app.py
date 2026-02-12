@@ -410,92 +410,75 @@ with tab1:
     annual_savings = horizon_savings * 12
 
     # ==========================================================================
-    # SIMPLE BREAKDOWN - Where Your Money Goes
+    # SIMPLE BREAKDOWN - Using Native Streamlit Components
     # ==========================================================================
 
-    # What Horizon would charge (interchange + small markup)
-    horizon_total = interchange_cost + (remaining_markup * 0.5)
+    horizon_fees = total_fees - horizon_savings
 
-    st.markdown(f"""
-    <div style="background: {LIGHT_BG}; border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem;">
-        <p style="margin: 0 0 1rem 0; font-weight: 700; color: {DEEP_NAVY}; font-size: 0.9rem;">
-            Where Your ${total_fees:,.0f}/month Goes:
-        </p>
+    st.subheader(f"Where Your ${total_fees:,.0f}/month Goes")
 
-        <div style="margin-bottom: 0.8rem;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                <span style="color: #666;">Visa & Mastercard (unavoidable)</span>
-                <span style="font-weight: 600; color: {DEEP_NAVY};">${interchange_cost:,.0f}</span>
-            </div>
-            <div style="background: #E0E0E0; border-radius: 8px; height: 12px; overflow: hidden;">
-                <div style="background: {BASE_GREY}; height: 100%; width: 100%;"></div>
-            </div>
-        </div>
+    # Breakdown metrics
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            label="Visa & Mastercard",
+            value=f"${interchange_cost:,.0f}",
+            help="This goes to the card networks - every processor pays this"
+        )
+    with col2:
+        st.metric(
+            label="Processor Markup",
+            value=f"${processor_markup:,.0f}",
+            delta="The Waste",
+            delta_color="inverse"
+        )
 
-        <div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                <span style="color: {WASTE_RED}; font-weight: 600;">Processor's Markup (the waste)</span>
-                <span style="font-weight: 700; color: {WASTE_RED};">${processor_markup:,.0f}</span>
-            </div>
-            <div style="background: #E0E0E0; border-radius: 8px; height: 12px; overflow: hidden;">
-                <div style="background: {WASTE_RED}; height: 100%; width: 100%;"></div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.divider()
 
     # ==========================================================================
     # BEFORE vs AFTER - Simple Comparison
     # ==========================================================================
 
+    st.subheader("Your Monthly Fees")
+
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown(f"""
-        <div style="background: #FFF5F5; border: 2px solid {WASTE_RED}; border-radius: 14px; padding: 1.2rem; text-align: center; height: 140px;">
-            <div style="font-size: 0.75rem; color: {WASTE_RED}; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Now</div>
-            <div style="font-size: 2rem; font-weight: 800; color: {WASTE_RED}; margin: 0.3rem 0;">${total_fees:,.0f}</div>
-            <div style="font-size: 0.8rem; color: #666;">per month</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.error(f"**NOW:** ${total_fees:,.0f}/mo")
 
     with col2:
-        st.markdown(f"""
-        <div style="background: #F0FFF4; border: 2px solid {SUCCESS_GREEN}; border-radius: 14px; padding: 1.2rem; text-align: center; height: 140px;">
-            <div style="font-size: 0.75rem; color: {SUCCESS_GREEN}; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">With Horizon</div>
-            <div style="font-size: 2rem; font-weight: 800; color: {SUCCESS_GREEN}; margin: 0.3rem 0;">${total_fees - horizon_savings:,.0f}</div>
-            <div style="font-size: 0.8rem; color: #666;">per month</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.success(f"**HORIZON:** ${horizon_fees:,.0f}/mo")
 
     # ==========================================================================
-    # BIG SAVINGS CARD
+    # BIG SAVINGS - Using native metric
     # ==========================================================================
 
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, {SUCCESS_GREEN} 0%, #1E8449 100%); color: white; padding: 1.5rem; border-radius: 16px; text-align: center; margin: 1rem 0; box-shadow: 0 8px 25px rgba(39,174,96,0.35);">
-        <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.95;">You Save</div>
-        <div style="font-size: 2.5rem; font-weight: 800; margin: 0.3rem 0;">${horizon_savings:,.0f}/mo</div>
-        <div style="font-size: 1.1rem; font-weight: 600; opacity: 0.95;">${annual_savings:,.0f} per year</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.divider()
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.metric(
+            label="YOU SAVE",
+            value=f"${horizon_savings:,.0f}/mo",
+            delta=f"${annual_savings:,.0f} per year",
+            delta_color="normal"
+        )
 
     # ==========================================================================
     # SIMPLE EXPLANATION
     # ==========================================================================
 
-    st.markdown(f"""
-    <div style="background: {LIGHT_BG}; border-left: 4px solid {TRUST_BLUE}; padding: 1rem; border-radius: 0 12px 12px 0; margin-top: 1rem;">
-        <p style="margin: 0; color: #444; font-size: 0.9rem; line-height: 1.6;">
-            <strong style="color: {DEEP_NAVY};">The Problem:</strong> Your processor charges a "flat rate" of {current_rate}%.
-            But Visa/Mastercard only takes about 1.8%. The rest—<strong style="color: {WASTE_RED};">${processor_markup:,.0f}/month</strong>—is pure profit for your processor.
-            <br><br>
-            <strong style="color: {DEEP_NAVY};">The Fix:</strong> Horizon uses "Interchange Plus" pricing.
-            We pass through the Visa/MC cost and add a small, transparent markup.
-            <strong style="color: {SUCCESS_GREEN};">You keep ${horizon_savings:,.0f} more every month.</strong>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.divider()
+
+    st.info(f"""
+**The Problem:** Your processor charges a "flat rate" of {current_rate}%.
+But Visa/Mastercard only takes about 1.8%.
+The rest — **${processor_markup:,.0f}/month** — is pure profit for your processor.
+
+**The Fix:** Horizon uses "Interchange Plus" pricing.
+We pass through the Visa/MC cost and add a small, transparent markup.
+**You keep ${horizon_savings:,.0f} more every month.**
+""")
 
 # =============================================================================
 # TAB 2: PRIORITY HANDOFF (THE CLOSE)
